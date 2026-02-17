@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/src/lib/supabaseClient";
+import { User } from "@supabase/supabase-js";
 
 type Bookmark = {
   id: string;
@@ -10,10 +11,18 @@ type Bookmark = {
 };
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const isValidUrl = (value: string) => {
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -53,7 +62,11 @@ export default function Home() {
 
   const addBookmark = async () => {
     if (!title || !url || !user) return;
-
+    
+    if (!isValidUrl(url)) {
+      alert("Please enter a valid URL");
+      return;
+    }
     await supabase.from("bookmarks").insert({
       title,
       url,
@@ -131,7 +144,8 @@ export default function Home() {
         />
         <button
           onClick={addBookmark}
-          className="rounded bg-black px-4 py-2 text-white"
+          disabled={!title || !url}
+          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
         >
           Add
         </button>
