@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/src/lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
+import { redirect } from "next/dist/server/api-utils";
 
 type Bookmark = {
   id: string;
@@ -15,6 +16,8 @@ export default function Home() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
   const isValidUrl = (value: string) => {
     try {
       new URL(value);
@@ -25,10 +28,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -37,10 +36,6 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (user) fetchBookmarks();
-  }, [user]);
 
   const fetchBookmarks = async () => {
     const { data } = await supabase
@@ -52,7 +47,10 @@ export default function Home() {
   };
 
   const signIn = async () => {
-    await supabase.auth.signInWithOAuth({ provider: "google" });
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
   };
 
   const signOut = async () => {
@@ -62,14 +60,14 @@ export default function Home() {
 
   const addBookmark = async () => {
     if (!title || !url || !user) return;
-    
+
     if (!isValidUrl(url)) {
-      alert("Please enter a valid URL");
+      setError("Please enter a valid URL (including https://)");
       return;
     }
     await supabase.from("bookmarks").insert({
-      title,
-      url,
+      title: title.trim(),
+      url: url.trim(),
       user_id: user.id,
     });
 
@@ -83,6 +81,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return;
+    fetchBookmarks();
 
     const channel = supabase
       .channel("bookmarks-realtime")
@@ -102,6 +101,7 @@ export default function Home() {
       supabase.removeChannel(channel);
     };
   }, [user]);
+  
   // NOT LOGGED IN UI
   if (!user) {
     return (
@@ -129,23 +129,31 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex items-start gap-2">
         <input
-          className="flex-1 rounded border px-3 py-2"
+          className="flex-1 rounded border px-3 py-2 border-gray-300"
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        <input
-          className="flex-1 rounded border px-3 py-2"
-          placeholder="URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
+
+        <div className="flex flex-1 flex-col gap-1">
+          <input
+            className={`rounded border px-3 py-2 ${
+              error ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </div>
+
         <button
           onClick={addBookmark}
           disabled={!title || !url}
-          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="h-[42px] rounded bg-black px-4 text-white disabled:opacity-50"
         >
           Add
         </button>
