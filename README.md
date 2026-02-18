@@ -59,12 +59,17 @@ https://supabase-bookmarks-pearl.vercel.app
 
 ## Running locally
 
+```bash
+# Clone the repo
 git clone https://github.com/ansifar88/supabase-bookmarks
 cd supabase-bookmarks
+
+# Install dependencies
 npm install
-npm run dev 
 
-Create a .env.local file with your Supabase credentials:
-
+# Create env variables (create a file named .env.local and add the following)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Start the dev server
+npm run dev
