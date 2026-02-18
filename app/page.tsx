@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/src/lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
-import { redirect } from "next/dist/server/api-utils";
 
 type Bookmark = {
   id: string;
@@ -129,7 +128,7 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="mb-4 flex items-start gap-2">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start">
         <input
           className="flex-1 rounded border px-3 py-2 border-gray-300"
           placeholder="Title"
